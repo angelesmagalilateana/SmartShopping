@@ -69,3 +69,7 @@ npx expo-doctor
 
 Los tests cubren validaciones, ProductItem y persistencia de autenticación
 y productos.
+
+## Video demo
+
+[Ver video de demostración de SmartShopping](https://youtube.com/shorts/98tTcGc9NVs?feature=share)
