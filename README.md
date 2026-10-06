@@ -70,6 +70,14 @@ npx expo-doctor
 Los tests cubren validaciones, ProductItem y persistencia de autenticación
 y productos.
 
+## Resultados de las pruebas
+
+Las 4 suites y los 36 tests finalizaron correctamente en la ejecución mostrada.
+
+![Resultados de autenticación, persistencia y validación](docs/images/test1.png)
+
+![Resultados de componentes y resumen de las pruebas](docs/images/test2.png)
+
 ## Video demo
 
 [Ver video de demostración de SmartShopping](https://youtube.com/shorts/98tTcGc9NVs?feature=share)
