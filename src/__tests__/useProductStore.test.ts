@@ -198,3 +198,28 @@ it.each([{ latitude: 91, longitude: 0 }, { latitude: 0, longitude: -181 }, { lat
   await expect(store.getState().add({ name: 'Pan', quantity: 1, location })).rejects.toThrow('ubicación');
   expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 });
+
+it('asocia, cambia, recarga y quita proveedor conservando datos anteriores', async () => {
+  await AsyncStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([oldProduct]));
+  await store.getState().update('1', { supplier: { name: 'Ana', phone: '123' } });
+  expect((await getProducts())[0].supplier).toEqual({ name: 'Ana', phone: '123' });
+  await store.getState().update('1', { supplier: { name: 'Luis', email: 'luis@example.test' } });
+  const restarted = createProductStore();
+  await restarted.getState().load();
+  expect(restarted.getState().products[0]).toEqual({ ...oldProduct, supplier: { name: 'Luis', email: 'luis@example.test' } });
+  await store.getState().update('1', { supplier: undefined });
+  expect(await getProducts()).toEqual([oldProduct]);
+});
+
+it('fallar al cambiar proveedor conserva memoria y persistencia', async () => {
+  const supplier = { name: 'Ana' };
+  await store.getState().add({ name: 'Pan', quantity: 1, supplier });
+  jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disco'));
+  await expect(store.getState().update(store.getState().products[0].id, { supplier: { name: 'Luis' } })).rejects.toThrow();
+  expect(store.getState().products[0].supplier).toEqual(supplier);
+  expect((await getProducts())[0].supplier).toEqual(supplier);
+});
+it.each([{ name: '' }, { name: 'Ana', phone: '' }, { name: 'Ana', notes: 'No almacenar' }])('rechaza proveedor inválido o datos adicionales: %j', async (supplier) => {
+  await expect(store.getState().add({ name: 'Pan', quantity: 1, supplier })).rejects.toThrow('proveedor');
+  expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+});
