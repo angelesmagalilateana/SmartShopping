@@ -8,15 +8,20 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+coverage/
 
 # Native
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
+*.pfx
 *.key
 *.mobileprovision
+*.apk
+*.aab
 
 # Metro
 .metro-health-check*
@@ -54,3 +59,8 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+
+# Local-only tooling, course material, and preserved originals
+/.agents/
+/docs/material-catedra/
+/.local-private/
