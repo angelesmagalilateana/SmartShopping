@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import type { Product } from '../types/models';
 import { getProducts, saveProducts } from '../storage/productStorage';
 import { isProductNameValid, isQuantityValid } from '../utils/validation';
+import { isPhotoReferenceValid } from '../utils/photoReference';
 
-type ProductInput = Pick<Product, 'name' | 'quantity'>;
-type ProductChanges = Partial<Pick<Product, 'name' | 'quantity' | 'purchased'>>;
+type ProductInput = Pick<Product, 'name' | 'quantity' | 'photoUri'>;
+type ProductChanges = Partial<Pick<Product, 'name' | 'quantity' | 'purchased' | 'photoUri'>>;
 
 export interface ProductStore {
   products: Product[];
@@ -21,6 +22,7 @@ export interface ProductStore {
 }
 
 function validate(product: ProductInput) {
+  if (!isPhotoReferenceValid(product.photoUri)) throw new Error('La referencia de la foto no es válida.');
   if (!isProductNameValid(product.name)) throw new Error('Ingresá el nombre del producto.');
   if (!isQuantityValid(product.quantity)) throw new Error('La cantidad debe ser un número entero mayor o igual a 1.');
 }
@@ -78,7 +80,7 @@ export function createProductStore() {
         validate(input);
         let id = Date.now().toString();
         while (products.some((product) => product.id === id)) id = (Number(id) + 1).toString();
-        return [...products, { id, name: input.name.trim(), quantity: input.quantity, purchased: false }];
+        return [...products, { id, name: input.name.trim(), quantity: input.quantity, purchased: false, ...(input.photoUri ? { photoUri: input.photoUri } : {}) }];
       }, 'No se pudo guardar el producto. Intentá nuevamente.'),
       update: (id, changes) => mutate((products) => products.map((product) => {
         if (product.id !== id) return product;

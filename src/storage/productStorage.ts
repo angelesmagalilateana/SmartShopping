@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Product } from '../types/models';
 import { isProductNameValid, isQuantityValid } from '../utils/validation';
 import { STORAGE_KEYS } from './keys';
+import { isPhotoReferenceValid } from '../utils/photoReference';
 
 export async function getProducts(): Promise<Product[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEYS.PRODUCTS);
@@ -12,7 +13,8 @@ export async function getProducts(): Promise<Product[]> {
     'id' in item && typeof item.id === 'string' && item.id.length > 0 &&
     'name' in item && typeof item.name === 'string' && isProductNameValid(item.name) &&
     'quantity' in item && typeof item.quantity === 'number' && isQuantityValid(item.quantity) &&
-    'purchased' in item && typeof item.purchased === 'boolean'
+    'purchased' in item && typeof item.purchased === 'boolean' &&
+    (!('photoUri' in item) || isPhotoReferenceValid(item.photoUri))
   )) {
     throw new Error('Los productos guardados no tienen un formato válido.');
   }

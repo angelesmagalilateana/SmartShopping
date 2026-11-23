@@ -12,4 +12,5 @@ export type Product = {
   name: string;
   quantity: number;
   purchased: boolean;
+  photoUri?: string;
 };

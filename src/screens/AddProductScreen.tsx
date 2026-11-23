@@ -1,19 +1,27 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, Text, TextInput } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthenticatedStackParamList } from '../navigation/types';
-import type { Product } from '../types/models';
-import { getProducts, saveProducts } from '../storage/productStorage';
+import { useProductStore } from '../store/useProductStore';
+import ProductPhoto from '../components/ProductPhoto';
+import { deletePhoto } from '../storage/photoStorage';
 import { isProductNameValid, isQuantityValid } from '../utils/validation';
 
 type Props = NativeStackScreenProps<AuthenticatedStackParamList, 'AltaProducto'>;
 
 export default function AddProductScreen({ navigation }: Props) {
+  const add = useProductStore((state) => state.add);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string>();
   const saving = useRef(false);
+  const draftPhoto = useRef<string | undefined>(undefined);
+  const saved = useRef(false);
+  useEffect(() => () => {
+    if (!saved.current && !saving.current && draftPhoto.current) void deletePhoto(draftPhoto.current).catch(() => undefined);
+  }, []);
 
   async function save() {
     if (saving.current) return;
@@ -30,13 +38,8 @@ export default function AddProductScreen({ navigation }: Props) {
     saving.current = true;
     setBusy(true);
     try {
-      const products = await getProducts();
-      let id = Date.now().toString();
-      while (products.some((product) => product.id === id)) {
-        id = (Number(id) + 1).toString();
-      }
-      const product: Product = { id, name: name.trim(), quantity: amount, purchased: false };
-      await saveProducts([...products, product]);
+      await add({ name, quantity: amount, photoUri });
+      saved.current = true;
       navigation.goBack();
     } catch {
       setError('No se pudo guardar el producto. Intentá nuevamente.');
@@ -55,6 +58,7 @@ export default function AddProductScreen({ navigation }: Props) {
         <TextInput accessibilityLabel="Nombre del producto" style={styles.input} value={name} onChangeText={setName} editable={!busy} />
         <Text style={styles.label}>Cantidad</Text>
         <TextInput accessibilityLabel="Cantidad" style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="number-pad" editable={!busy} />
+        <ProductPhoto reference={photoUri} disabled={busy} onChange={async (value) => { draftPhoto.current = value; setPhotoUri(value); }} onBusy={(value) => { saving.current = value; setBusy(value); }} />
         {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={[styles.primaryButton, (busy) && styles.disabledButton]} onPress={save} disabled={busy}><Text style={styles.primaryButtonText}>{busy ? 'Guardando...' : 'Guardar producto'}</Text></TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={[styles.linkButton, (busy) && styles.disabledButton]} onPress={() => navigation.goBack()} disabled={busy}><Text style={styles.linkButtonText}>Cancelar</Text></TouchableOpacity>

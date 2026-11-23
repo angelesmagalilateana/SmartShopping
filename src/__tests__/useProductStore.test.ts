@@ -145,3 +145,28 @@ it('rechaza una actualización inválida sin perder el producto', async () => {
   expect(store.getState().products).toEqual(previous);
   expect(await getProducts()).toEqual(previous);
 });
+
+it('asocia, sustituye y quita una foto conservando el resto del producto y la persistencia', async () => {
+  await store.getState().add({ name: 'Pan', quantity: 1, photoUri: 'file:///documents/first.jpg' });
+  const id = store.getState().products[0].id;
+  expect((await getProducts())[0].photoUri).toBe('file:///documents/first.jpg');
+  await store.getState().update(id, { photoUri: 'file:///documents/second.jpg' });
+  const restarted = createProductStore();
+  await restarted.getState().load();
+  expect(restarted.getState().products[0]).toEqual({ id, name: 'Pan', quantity: 1, purchased: false, photoUri: 'file:///documents/second.jpg' });
+  await store.getState().update(id, { photoUri: undefined });
+  expect((await getProducts())[0].photoUri).toBeUndefined();
+});
+
+it('un fallo al reemplazar una foto conserva la referencia anterior', async () => {
+  await store.getState().add({ name: 'Pan', quantity: 1, photoUri: 'file:///documents/first.jpg' });
+  jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disco'));
+  await expect(store.getState().update(store.getState().products[0].id, { photoUri: 'file:///documents/second.jpg' })).rejects.toThrow();
+  expect(store.getState().products[0].photoUri).toBe('file:///documents/first.jpg');
+  expect((await getProducts())[0].photoUri).toBe('file:///documents/first.jpg');
+});
+
+it.each(['data:image/jpeg;base64,abc', 'blob:temporary'])('rechaza referencias temporales o base64: %s', async (photoUri) => {
+  await expect(store.getState().add({ name: 'Pan', quantity: 1, photoUri })).rejects.toThrow('referencia');
+  expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+});
