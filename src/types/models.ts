@@ -15,7 +15,10 @@ export type Product = {
   photoUri?: string;
   location?: ProductLocation;
   supplier?: ProductSupplier;
+  calendarEvent?: ProductCalendarEvent;
 };
 
 export type ProductLocation = { latitude: number; longitude: number };
 export type ProductSupplier = { name: string; phone?: string; email?: string };
+
+export type ProductCalendarEvent = { eventId: string; calendarId: string; startDate: string };

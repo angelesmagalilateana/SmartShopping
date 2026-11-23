@@ -50,6 +50,24 @@ export default function HomeScreen({ navigation, session, onLogout }: Props) {
     }
   }
 
+  async function updateCalendarEvent(id: string, calendarEvent?: Product['calendarEvent']) {
+    if (operationInProgress.current || loading || loadError) throw new Error('No se pudo guardar el vínculo del calendario. Intentá nuevamente.');
+    operationInProgress.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const next = products.map((product) => product.id === id ? { ...product, calendarEvent } : product);
+      await saveProducts(next);
+      setProducts(next);
+    } catch {
+      setError('No se pudo guardar el vínculo del calendario. El evento seguirá en la agenda. Reintentá el vínculo.');
+      throw new Error('No se pudo guardar el vínculo del evento.');
+    } finally {
+      operationInProgress.current = false;
+      setBusy(false);
+    }
+  }
+
   async function remind() {
     if (operationInProgress.current || loading || loadError) return;
     if (!products.some((product) => !product.purchased)) {
@@ -112,6 +130,7 @@ export default function HomeScreen({ navigation, session, onLogout }: Props) {
                 disabled={busy}
                 onToggle={(id) => { void updateProducts(products.map((product) => product.id === id ? { ...product, purchased: !product.purchased } : product)); }}
                 onDelete={(id) => { void updateProducts(products.filter((product) => product.id !== id)); }}
+                  onCalendarChange={(id, event) => updateCalendarEvent(id, event)}
               />
             )}
           />

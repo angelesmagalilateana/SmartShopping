@@ -38,4 +38,9 @@ describe('ProductItem', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Marcar como pendiente' }));
     expect(onToggle).toHaveBeenCalledWith(product.id);
   });
+
+  it('ofrece el recordatorio desde el producto en la lista', async () => {
+    await render(<ProductItem product={product} onDelete={jest.fn()} onToggle={jest.fn()} onCalendarChange={async (_id: string, _event?: Product['calendarEvent']): Promise<void> => {}} />);
+    expect(screen.getByRole('button', { name: 'Crear recordatorio para Leche' })).toBeTruthy();
+  });
 });

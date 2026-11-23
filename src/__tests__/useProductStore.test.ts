@@ -223,3 +223,15 @@ it.each([{ name: '' }, { name: 'Ana', phone: '' }, { name: 'Ana', notes: 'No alm
   await expect(store.getState().add({ name: 'Pan', quantity: 1, supplier })).rejects.toThrow('proveedor');
   expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 });
+
+it('persiste metadatos de calendario y mantiene productos antiguos sin ese campo', async () => {
+  await AsyncStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([oldProduct]));
+  await store.getState().load();
+  expect(store.getState().products[0]).toEqual(oldProduct);
+  const event = { eventId: 'event-1', calendarId: 'cal-1', startDate: '2027-01-01T10:00:00.000Z' };
+  await store.getState().update('1', { calendarEvent: event });
+  const restarted = createProductStore();
+  await restarted.getState().load();
+  expect(restarted.getState().products[0].calendarEvent).toEqual(event);
+  await store.getState().update('1', { calendarEvent: undefined });
+});

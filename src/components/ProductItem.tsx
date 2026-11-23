@@ -1,14 +1,16 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { Product } from '../types/models';
+import ProductCalendarReminder from './ProductCalendarReminder';
 
 type Props = {
   product: Product;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onCalendarChange?: (id: string, event?: Product['calendarEvent']) => Promise<void>;
   disabled?: boolean;
 };
 
-export default function ProductItem({ product, onToggle, onDelete, disabled = false }: Props) {
+export default function ProductItem({ product, onToggle, onDelete, onCalendarChange, disabled = false }: Props) {
   return (
     <View style={styles.container}>
       <Text style={[styles.name, product.purchased && styles.purchased]}>{product.name}</Text>
@@ -22,6 +24,7 @@ export default function ProductItem({ product, onToggle, onDelete, disabled = fa
           <Text style={styles.delete}>Eliminar</Text>
         </TouchableOpacity>
       </View>
+      {onCalendarChange ? <ProductCalendarReminder productId={product.id} productName={product.name} event={product.calendarEvent} disabled={disabled} onChange={(event) => onCalendarChange(product.id, event)} /> : null}
     </View>
   );
 }

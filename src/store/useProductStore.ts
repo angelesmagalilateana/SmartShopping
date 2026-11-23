@@ -7,7 +7,7 @@ import { isProductLocationValid } from '../utils/productLocation';
 import { isProductSupplierValid } from '../utils/productSupplier';
 
 type ProductInput = Pick<Product, 'name' | 'quantity' | 'photoUri' | 'location' | 'supplier'>;
-type ProductChanges = Partial<Pick<Product, 'name' | 'quantity' | 'purchased' | 'photoUri' | 'location' | 'supplier'>>;
+type ProductChanges = Partial<Pick<Product, 'name' | 'quantity' | 'purchased' | 'photoUri' | 'location' | 'supplier' | 'calendarEvent'>>;
 
 export interface ProductStore {
   products: Product[];
