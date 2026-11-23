@@ -6,10 +6,43 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permití usar la cámara para fotografiar tus productos.",
+          "photosPermission": "Permití elegir fotos para tus productos.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permití usar tu ubicación para asociar el comercio a un producto.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Permití seleccionar un contacto como proveedor de un producto."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Permití crear recordatorios de productos en un calendario que elijas."
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "permissions": ["READ_CALENDAR", "WRITE_CALENDAR"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
