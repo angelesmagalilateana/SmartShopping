@@ -3,6 +3,7 @@ import type { Product } from '../types/models';
 import { isProductNameValid, isQuantityValid } from '../utils/validation';
 import { STORAGE_KEYS } from './keys';
 import { isPhotoReferenceValid } from '../utils/photoReference';
+import { isProductLocationValid } from '../utils/productLocation';
 
 export async function getProducts(): Promise<Product[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEYS.PRODUCTS);
@@ -14,7 +15,8 @@ export async function getProducts(): Promise<Product[]> {
     'name' in item && typeof item.name === 'string' && isProductNameValid(item.name) &&
     'quantity' in item && typeof item.quantity === 'number' && isQuantityValid(item.quantity) &&
     'purchased' in item && typeof item.purchased === 'boolean' &&
-    (!('photoUri' in item) || isPhotoReferenceValid(item.photoUri))
+    (!('photoUri' in item) || isPhotoReferenceValid(item.photoUri)) &&
+    (!('location' in item) || item.location === undefined || isProductLocationValid(item.location))
   )) {
     throw new Error('Los productos guardados no tienen un formato válido.');
   }

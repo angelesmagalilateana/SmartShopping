@@ -13,4 +13,7 @@ export type Product = {
   quantity: number;
   purchased: boolean;
   photoUri?: string;
+  location?: ProductLocation;
 };
+
+export type ProductLocation = { latitude: number; longitude: number };

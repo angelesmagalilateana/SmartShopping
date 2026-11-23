@@ -170,3 +170,31 @@ it.each(['data:image/jpeg;base64,abc', 'blob:temporary'])('rechaza referencias t
   await expect(store.getState().add({ name: 'Pan', quantity: 1, photoUri })).rejects.toThrow('referencia');
   expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 });
+
+it('asocia, actualiza, recarga y quita ubicación sin modificar la foto ni los datos anteriores', async () => {
+  await store.getState().add({ name: 'Pan', quantity: 1, photoUri: 'file:///documents/a.jpg' });
+  const id = store.getState().products[0].id;
+  await store.getState().update(id, { location: { latitude: -34, longitude: -58 } });
+  expect((await getProducts())[0].location).toEqual({ latitude: -34, longitude: -58 });
+  await store.getState().update(id, { location: { latitude: 0, longitude: 0 } });
+  const restarted = createProductStore();
+  await restarted.getState().load();
+  expect(restarted.getState().products[0].location).toEqual({ latitude: 0, longitude: 0 });
+  expect(restarted.getState().products[0].photoUri).toBe('file:///documents/a.jpg');
+  await store.getState().update(id, { location: undefined });
+  expect((await getProducts())[0].location).toBeUndefined();
+});
+
+it('fallar el guardado de ubicación conserva el estado anterior', async () => {
+  const location = { latitude: -34, longitude: -58 };
+  await store.getState().add({ name: 'Pan', quantity: 1, location });
+  jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disco'));
+  await expect(store.getState().update(store.getState().products[0].id, { location: undefined })).rejects.toThrow();
+  expect(store.getState().products[0].location).toEqual(location);
+  expect((await getProducts())[0].location).toEqual(location);
+});
+
+it.each([{ latitude: 91, longitude: 0 }, { latitude: 0, longitude: -181 }, { latitude: Infinity, longitude: 0 }])('rechaza ubicaciones inválidas %j', async (location) => {
+  await expect(store.getState().add({ name: 'Pan', quantity: 1, location })).rejects.toThrow('ubicación');
+  expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+});
