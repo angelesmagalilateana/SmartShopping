@@ -6,4 +6,5 @@ export type PublicStackParamList = {
 export type AuthenticatedStackParamList = {
   Home: undefined;
   AltaProducto: undefined;
+  DetalleProducto: { productId: string };
 };

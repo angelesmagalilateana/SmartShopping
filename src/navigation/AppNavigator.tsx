@@ -4,6 +4,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AddProductScreen from '../screens/AddProductScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
 import type { Session } from '../types/models';
 import type { AuthenticatedStackParamList, PublicStackParamList } from './types';
 
@@ -25,6 +26,7 @@ export default function AppNavigator({ session, onLogin, onLogout }: Props) {
             {(props) => <HomeScreen {...props} session={session} onLogout={onLogout} />}
           </AuthenticatedStack.Screen>
           <AuthenticatedStack.Screen name="AltaProducto" component={AddProductScreen} options={{ title: 'Alta de producto' }} />
+          <AuthenticatedStack.Screen name="DetalleProducto" component={ProductDetailScreen} options={{ title: 'Detalle del producto' }} />
         </AuthenticatedStack.Navigator>
       ) : (
         <PublicStack.Navigator>

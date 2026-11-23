@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   label: { color: '#4B2E3F', fontSize: 14, fontWeight: '600', marginTop: 6 },
   input: { backgroundColor: '#FFFFFF', color: '#4B2E3F', borderWidth: 1, borderColor: '#F1D7E6', borderRadius: 14, padding: 15, fontSize: 16, minHeight: 50 },
   error: { color: '#B84D86', fontSize: 14, lineHeight: 20 },
-  primaryButton: { backgroundColor: '#D86BA3', borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: 'center', minHeight: 48, marginTop: 8 },
+  primaryButton: { backgroundColor: '#A84275', borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: 'center', minHeight: 48, marginTop: 8 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', textAlign: 'center' },
   secondaryButton: { backgroundColor: '#F0E6FF', borderColor: '#C8A2FF', borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', minHeight: 48 },
   secondaryButtonText: { color: '#4B2E3F', fontSize: 15, fontWeight: '600', textAlign: 'center' },

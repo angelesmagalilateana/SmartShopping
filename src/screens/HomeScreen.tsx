@@ -3,10 +3,13 @@ import { Alert, Button, FlatList, StyleSheet, TouchableOpacity, Text, View } fro
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthenticatedStackParamList } from '../navigation/types';
-import type { Product, Session } from '../types/models';
+import type { Session } from '../types/models';
 import ProductItem from '../components/ProductItem';
-import { getProducts, saveProducts } from '../storage/productStorage';
+import { useProductStore } from '../store/useProductStore';
+import { deletePhoto } from '../storage/photoStorage';
 import { REMINDER_DELAY_SECONDS, scheduleShoppingReminder } from '../notifications/reminders';
+import ConfirmProductDelete from '../components/ConfirmProductDelete';
+import type { Product } from '../types/models';
 
 type Props = NativeStackScreenProps<AuthenticatedStackParamList, 'Home'> & {
   session: Session;
@@ -14,58 +17,49 @@ type Props = NativeStackScreenProps<AuthenticatedStackParamList, 'Home'> & {
 };
 
 export default function HomeScreen({ navigation, session, onLogout }: Props) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const products = useProductStore((state) => state.products);
+  const loading = useProductStore((state) => state.loading || !state.loaded && !state.loadError);
+  const loadError = useProductStore((state) => state.loadError);
+  const storeBusy = useProductStore((state) => state.busy);
+  const load = useProductStore((state) => state.load);
+  const toggle = useProductStore((state) => state.toggle);
+  const remove = useProductStore((state) => state.remove);
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [localBusy, setBusy] = useState(false);
+  const busy = localBusy || storeBusy;
   const operationInProgress = useRef(false);
   const [retry, setRetry] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
 
   useFocusEffect(useCallback(() => {
-    let active = true;
-    setLoading(true);
-    setLoadError('');
     setError('');
-    getProducts()
-      .then((stored) => { if (active) setProducts(stored); })
-      .catch(() => { if (active) setLoadError('No se pudo cargar la lista. Intentá nuevamente.'); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [retry]));
+    void load().catch(() => undefined);
+  }, [load, retry]));
 
-  async function updateProducts(next: Product[]) {
-    if (operationInProgress.current || loading || loadError) return;
+  async function updateProducts(action: () => Promise<void>): Promise<boolean> {
+    if (operationInProgress.current || loading || loadError) return false;
     operationInProgress.current = true;
     setBusy(true);
     setError('');
     try {
-      await saveProducts(next);
-      setProducts(next);
+      await action();
+      return true;
     } catch {
       setError('No se pudo guardar el cambio. Intentá nuevamente.');
+      return false;
     } finally {
       operationInProgress.current = false;
       setBusy(false);
     }
   }
 
-  async function updateCalendarEvent(id: string, calendarEvent?: Product['calendarEvent']) {
-    if (operationInProgress.current || loading || loadError) throw new Error('No se pudo guardar el vínculo del calendario. Intentá nuevamente.');
-    operationInProgress.current = true;
-    setBusy(true);
-    setError('');
-    try {
-      const next = products.map((product) => product.id === id ? { ...product, calendarEvent } : product);
-      await saveProducts(next);
-      setProducts(next);
-    } catch {
-      setError('No se pudo guardar el vínculo del calendario. El evento seguirá en la agenda. Reintentá el vínculo.');
-      throw new Error('No se pudo guardar el vínculo del evento.');
-    } finally {
-      operationInProgress.current = false;
-      setBusy(false);
-    }
+  async function confirmDelete(product: Product) {
+    const success = await updateProducts(async () => {
+      await remove(product.id);
+      if (product.photoUri) await deletePhoto(product.photoUri).catch(() => undefined);
+      // The calendar event intentionally remains in the user's calendar.
+    });
+    if (success) setPendingDelete(null);
   }
 
   async function remind() {
@@ -127,10 +121,10 @@ export default function HomeScreen({ navigation, session, onLogout }: Props) {
             renderItem={({ item }) => (
               <ProductItem
                 product={item}
+                onOpen={(id) => navigation.navigate('DetalleProducto', { productId: id })}
                 disabled={busy}
-                onToggle={(id) => { void updateProducts(products.map((product) => product.id === id ? { ...product, purchased: !product.purchased } : product)); }}
-                onDelete={(id) => { void updateProducts(products.filter((product) => product.id !== id)); }}
-                  onCalendarChange={(id, event) => updateCalendarEvent(id, event)}
+                onToggle={(id) => { void updateProducts(() => toggle(id)); }}
+                onDelete={() => setPendingDelete(item)}
               />
             )}
           />
@@ -140,6 +134,7 @@ export default function HomeScreen({ navigation, session, onLogout }: Props) {
       <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy || loading || !!loadError }} style={[styles.primaryButton, (busy || loading || !!loadError) && styles.disabledButton]} onPress={() => navigation.navigate('AltaProducto')} disabled={busy || loading || !!loadError}><Text style={styles.primaryButtonText}>Agregar producto</Text></TouchableOpacity>
       <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy || loading || !!loadError }} style={[styles.secondaryButton, (busy || loading || !!loadError) && styles.disabledButton]} onPress={remind} disabled={busy || loading || !!loadError}><Text style={styles.secondaryButtonText}>Recordarme comprar</Text></TouchableOpacity>
       <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={[styles.linkButton, (busy) && styles.disabledButton]} onPress={logout} disabled={busy}><Text style={styles.linkButtonText}>Cerrar sesión</Text></TouchableOpacity>
+      <ConfirmProductDelete product={pendingDelete} busy={busy} onCancel={() => setPendingDelete(null)} onConfirm={(product) => { void confirmDelete(product); }} />
     </View>
   );
 }
@@ -152,7 +147,7 @@ const styles = StyleSheet.create({
   empty: { color: '#7A5A6A', textAlign: 'center', padding: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F1D7E6', borderRadius: 16, lineHeight: 22 },
   list: { flex: 1 },
   error: { color: '#B84D86', fontSize: 14, lineHeight: 20 },
-  primaryButton: { backgroundColor: '#D86BA3', borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: 'center', minHeight: 48, marginTop: 8 },
+  primaryButton: { backgroundColor: '#A84275', borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: 'center', minHeight: 48, marginTop: 8 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', textAlign: 'center' },
   secondaryButton: { backgroundColor: '#F0E6FF', borderColor: '#C8A2FF', borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', minHeight: 48 },
   secondaryButtonText: { color: '#4B2E3F', fontSize: 15, fontWeight: '600', textAlign: 'center' },
